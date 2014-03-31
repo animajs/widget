@@ -9,7 +9,6 @@ define(function(require, exports, module) {
   var Base = require('base')
   var $ = require('$')
   var DAParser = require('./daparser')
-  var AutoRender = require('./auto-render')
 
   var DELEGATE_EVENT_NS = '.delegate-events-'
   var ON_RENDER = '_onRender'
@@ -85,7 +84,7 @@ define(function(require, exports, module) {
       }
 
       // 解析 data-api 时，只考虑用户传入的 element，不考虑来自继承或从模板构建的
-      if (element && element[0] && !AutoRender.isDataApiOff(element)) {
+      if (element && element[0] && !isDataApiOff(element)) {
         dataAttrsConfig = DAParser.parseElement(element)
       }
 
@@ -355,10 +354,6 @@ define(function(require, exports, module) {
   }
 
 
-  Widget.autoRender = AutoRender.autoRender
-  Widget.autoRenderAll = AutoRender.autoRenderAll
-  Widget.StaticsWhiteList = ['autoRender']
-
   module.exports = Widget
 
 
@@ -463,6 +458,18 @@ define(function(require, exports, module) {
       }
     }
     return argus;
+  }
+
+  var isDefaultOff = $(document.body).attr('data-api') === 'off';
+  // 是否没开启 data-api
+  function isDataApiOff(element) {
+    var elementDataApi = $(element).attr('data-api')
+
+    // data-api 默认开启，关闭只有两种方式：
+    //  1. element 上有 data-api="off"，表示关闭单个
+    //  2. document.body 上有 data-api="off"，表示关闭所有
+    return  elementDataApi === 'off' ||
+        (elementDataApi !== 'on' && isDefaultOff)
   }
 
 });

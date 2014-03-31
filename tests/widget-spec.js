@@ -655,14 +655,6 @@ define(function(require) {
       expect(counter).to.equal(1)
     })
 
-    it('statics white list', function() {
-
-      var A = Widget.extend()
-
-      expect(typeof A.autoRender).to.equal('function')
-      expect(typeof A.autoRenderAll).to.equal('undefined')
-    })
-
     it('data attr api', function() {
       var div = $('<div id="data-attr-api-test" data-a=1 data-b="b" data-arr="[1,2,3]" data-c="true" data-d=\'{"num": 1, "str": "s", "bool": true}\'></div>')
           .appendTo(document.body)

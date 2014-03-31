@@ -1,4 +1,4 @@
-define("anima/widget/2.0.0/widget-debug", [ "anima/base/2.0.0/base-debug", "anima/class/2.0.0/class-debug", "anima/events/1.1.0/events-debug", "$-debug", "./daparser-debug", "./auto-render-debug" ], function(require, exports, module) {
+define("anima/widget/2.0.0/widget-debug", [ "anima/base/2.0.0/base-debug", "anima/class/2.0.0/class-debug", "anima/events/1.1.0/events-debug", "$-debug" ], function(require, exports, module) {
     // Widget
     // ---------
     // Widget 是与 DOM 元素相关联的非工具类组件，主要负责 View 层的管理。
@@ -6,8 +6,6 @@ define("anima/widget/2.0.0/widget-debug", [ "anima/base/2.0.0/base-debug", "anim
     // 和 methods。Widget 基类约定了这四要素创建时的基本流程和最佳实践。
     var Base = require("anima/base/2.0.0/base-debug");
     var $ = require("$-debug");
-    var DAParser = require("./daparser-debug");
-    var AutoRender = require("./auto-render-debug");
     var DELEGATE_EVENT_NS = ".delegate-events-";
     var ON_RENDER = "_onRender";
     var DATA_WIDGET_CID = "data-widget-cid";
@@ -62,10 +60,6 @@ define("anima/widget/2.0.0/widget-debug", [ "anima/base/2.0.0/base-debug", "anim
             var element, dataAttrsConfig;
             if (config) {
                 element = config.initElement ? $(config.initElement) : $(config.element);
-            }
-            // 解析 data-api 时，只考虑用户传入的 element，不考虑来自继承或从模板构建的
-            if (element && element[0] && !AutoRender.isDataApiOff(element)) {
-                dataAttrsConfig = DAParser.parseElement(element);
             }
             return dataAttrsConfig;
         },
@@ -265,9 +259,6 @@ define("anima/widget/2.0.0/widget-debug", [ "anima/base/2.0.0/base-debug", "anim
         element && (cid = element.attr(DATA_WIDGET_CID));
         return cachedInstances[cid];
     };
-    Widget.autoRender = AutoRender.autoRender;
-    Widget.autoRenderAll = AutoRender.autoRenderAll;
-    Widget.StaticsWhiteList = [ "autoRender" ];
     module.exports = Widget;
     // Helpers
     // ------
@@ -349,132 +340,13 @@ define("anima/widget/2.0.0/widget-debug", [ "anima/base/2.0.0/base-debug", "anim
         }
         return argus;
     }
-});
-
-define("anima/widget/2.0.0/daparser-debug", [ "$-debug" ], function(require, exports) {
-    // DAParser
-    // --------
-    // data api 解析器，提供对单个 element 的解析，可用来初始化页面中的所有 Widget 组件。
-    var $ = require("$-debug");
-    // 得到某个 DOM 元素的 dataset
-    exports.parseElement = function(element, raw) {
-        element = $(element)[0];
-        var dataset = {};
-        // ref: https://developer.mozilla.org/en/DOM/element.dataset
-        if (element.dataset) {
-            // 转换成普通对象
-            dataset = $.extend({}, element.dataset);
-        } else {
-            var attrs = element.attributes;
-            for (var i = 0, len = attrs.length; i < len; i++) {
-                var attr = attrs[i];
-                var name = attr.name;
-                if (name.indexOf("data-") === 0) {
-                    name = camelCase(name.substring(5));
-                    dataset[name] = attr.value;
-                }
-            }
-        }
-        return raw === true ? dataset : normalizeValues(dataset);
-    };
-    // Helpers
-    // ------
-    var RE_DASH_WORD = /-([a-z])/g;
-    var JSON_LITERAL_PATTERN = /^\s*[\[{].*[\]}]\s*$/;
-    var parseJSON = this.JSON ? JSON.parse : $.parseJSON;
-    // 仅处理字母开头的，其他情况转换为小写："data-x-y-123-_A" --> xY-123-_a
-    function camelCase(str) {
-        return str.toLowerCase().replace(RE_DASH_WORD, function(all, letter) {
-            return (letter + "").toUpperCase();
-        });
-    }
-    // 解析并归一化配置中的值
-    function normalizeValues(data) {
-        for (var key in data) {
-            if (data.hasOwnProperty(key)) {
-                var val = data[key];
-                if (typeof val !== "string") continue;
-                if (JSON_LITERAL_PATTERN.test(val)) {
-                    val = val.replace(/'/g, '"');
-                    data[key] = normalizeValues(parseJSON(val));
-                } else {
-                    data[key] = normalizeValue(val);
-                }
-            }
-        }
-        return data;
-    }
-    // 将 'false' 转换为 false
-    // 'true' 转换为 true
-    // '3253.34' 转换为 3253.34
-    function normalizeValue(val) {
-        if (val.toLowerCase() === "false") {
-            val = false;
-        } else if (val.toLowerCase() === "true") {
-            val = true;
-        } else if (/\d/.test(val) && /[^a-z]/i.test(val)) {
-            var number = parseFloat(val);
-            if (number + "" === val) {
-                val = number;
-            }
-        }
-        return val;
-    }
-});
-
-define("anima/widget/2.0.0/auto-render-debug", [ "$-debug" ], function(require, exports) {
-    var $ = require("$-debug");
-    var DATA_WIDGET_AUTO_RENDERED = "data-widget-auto-rendered";
-    // 自动渲染接口，子类可根据自己的初始化逻辑进行覆盖
-    exports.autoRender = function(config) {
-        return new this(config).render();
-    };
-    // 根据 data-widget 属性，自动渲染所有开启了 data-api 的 widget 组件
-    exports.autoRenderAll = function(root, callback) {
-        if (typeof root === "function") {
-            callback = root;
-            root = null;
-        }
-        root = $(root || document.body);
-        var modules = [];
-        var elements = [];
-        root.find("[data-widget]").each(function(i, element) {
-            if (!exports.isDataApiOff(element)) {
-                modules.push(element.getAttribute("data-widget").toLowerCase());
-                elements.push(element);
-            }
-        });
-        if (modules.length) {
-            seajs.use(modules, function() {
-                for (var i = 0; i < arguments.length; i++) {
-                    var SubWidget = arguments[i];
-                    var element = $(elements[i]);
-                    // 已经渲染过
-                    if (element.attr(DATA_WIDGET_AUTO_RENDERED)) continue;
-                    var config = {
-                        initElement: element,
-                        renderType: "auto"
-                    };
-                    // data-widget-role 是指将当前的 DOM 作为 role 的属性去实例化，默认的 role 为 element
-                    var role = element.attr("data-widget-role");
-                    config[role ? role : "element"] = element;
-                    // 调用自动渲染接口
-                    SubWidget.autoRender && SubWidget.autoRender(config);
-                    // 标记已经渲染过
-                    element.attr(DATA_WIDGET_AUTO_RENDERED, "true");
-                }
-                // 在所有自动渲染完成后，执行回调
-                callback && callback();
-            });
-        }
-    };
     var isDefaultOff = $(document.body).attr("data-api") === "off";
     // 是否没开启 data-api
-    exports.isDataApiOff = function(element) {
+    function isDataApiOff(element) {
         var elementDataApi = $(element).attr("data-api");
         // data-api 默认开启，关闭只有两种方式：
         //  1. element 上有 data-api="off"，表示关闭单个
         //  2. document.body 上有 data-api="off"，表示关闭所有
         return elementDataApi === "off" || elementDataApi !== "on" && isDefaultOff;
-    };
+    }
 });
