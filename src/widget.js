@@ -7,7 +7,6 @@ define(function(require, exports, module) {
   // 和 methods。Widget 基类约定了这四要素创建时的基本流程和最佳实践。
 
   var Base = require('base')
-  var $ = require('$')
   var DAParser = require('./daparser')
 
   var DELEGATE_EVENT_NS = '.delegate-events-'
@@ -57,7 +56,7 @@ define(function(require, exports, module) {
 
       // 初始化 attrs
       var dataAttrsConfig = this._parseDataAttrsConfig(config)
-      Widget.superclass.initialize.call(this, config ? $.extend(dataAttrsConfig, config) : dataAttrsConfig)
+      Widget.superclass.initialize.call(this, config ? mix(dataAttrsConfig || {}, config) : dataAttrsConfig)
 
       // 初始化 props
       this.parseElement()
@@ -80,11 +79,11 @@ define(function(require, exports, module) {
     _parseDataAttrsConfig: function(config) {
       var element, dataAttrsConfig
       if (config) {
-        element = config.initElement ? $(config.initElement) : $(config.element)
+        element = config.initElement ? find(config.initElement)[0] : find(config.element)[0];
       }
 
       // 解析 data-api 时，只考虑用户传入的 element，不考虑来自继承或从模板构建的
-      if (element && element[0] && !isDataApiOff(element)) {
+      if (element && !isDataApiOff(element)) {
         dataAttrsConfig = DAParser.parseElement(element)
       }
 
@@ -93,25 +92,25 @@ define(function(require, exports, module) {
 
     // 构建 this.element
     parseElement: function() {
-      var element = this.element
+      var element = this.element;
 
       if (element) {
-        this.element = $(element)
+        this.element = find(element)[0];
       }
       // 未传入 element 时，从 template 构建
-      else if (this.get('template')) {
+      else if (!this.element && this.get('template')) {
         this.parseElementFromTemplate()
       }
 
       // 如果对应的 DOM 元素不存在，则报错
-      if (!this.element || !this.element[0]) {
+      if (!this.element) {
         throw new Error('element is invalid')
       }
     },
 
     // 从模板中构建 this.element
     parseElementFromTemplate: function() {
-      this.element = $(this.get('template'))
+      this.element = parseElementFromHTML(this.get('template'))
     },
 
     // 负责 properties 的初始化，提供给子类覆盖
@@ -147,7 +146,7 @@ define(function(require, exports, module) {
       else {
         element || (element = this.element)
         this._delegateElements || (this._delegateElements = [])
-        this._delegateElements.push($(element))
+        this._delegateElements.push(element)
       }
 
       // 'click p' => {'click p': handler}
@@ -176,14 +175,7 @@ define(function(require, exports, module) {
           }
 
           // delegate
-          if (selector) {
-            $(element).on(eventType, selector, callback)
-          }
-          // normal bind
-          // 分开写是为了兼容 zepto，zepto 的判断不如 jquery 强劲有力
-          else {
-            $(element).on(eventType, callback)
-          }
+          on(element, eventType, selector, callback);
 
         })(events[key], this)
       }
@@ -205,13 +197,13 @@ define(function(require, exports, module) {
       if (argus.length === 0) {
         var type = DELEGATE_EVENT_NS + this.cid
 
-        this.element && this.element.off(type)
+        this.element && off(this.element, type);
 
         // 卸载所有外部传入的 element
         if (this._delegateElements) {
           for (var de in this._delegateElements) {
             if (!this._delegateElements.hasOwnProperty(de)) continue
-            this._delegateElements[de].off(type)
+            off(this._delegateElements[de], type)
           }
         }
 
@@ -221,13 +213,13 @@ define(function(require, exports, module) {
         // 卸载 this.element
         // .undelegateEvents(events)
         if (!element) {
-          this.element && this.element.off(args.type, args.selector)
+          this.element && off(this.element, args.type, args.selector)
         }
 
         // 卸载外部 element
         // .undelegateEvents(element, events)
         else {
-          $(element).off(args.type, args.selector)
+          off(element, args.type, args.selector)
         }
       }
       return this
@@ -249,16 +241,22 @@ define(function(require, exports, module) {
       }
 
       // 插入到文档流中
-      var parentNode = this.get('parentNode')
-      if (parentNode && !isInDocument(this.element[0])) {
+      var parentNode = find(this.get('parentNode'))[0];
+      // parentNode 支持 jQuery|zepto Object.
+      if (!parentNode.appendChild && parentNode[0] && parentNode[0].appendChild) {
+        parentNode = parentNode[0];
+      }
+      if (parentNode && !isInDocument(this.element)) {
         // 隔离样式，添加统一的命名空间
         // https://github.com/aliceui/aliceui.org/issues/9
         var outerBoxClass = this.constructor.outerBoxClass
         if (outerBoxClass) {
-          var outerBox = this._outerBox = $('<div></div>').addClass(outerBoxClass)
-          outerBox.append(this.element).appendTo(parentNode)
+          var outerBox = this._outerBox = document.createElement("div");
+          outerBox.className = outerBoxClass;
+          outerBox.appendChild(this.element);
+          parentNode.appendChild(outerBox);
         } else {
-          this.element.appendTo(parentNode)
+          parentNode.appendChild(this.element);
         }
       }
 
@@ -301,29 +299,30 @@ define(function(require, exports, module) {
     },
 
     _onRenderStyle: function(val) {
-      this.element.css(val)
+      css(this.element, val);
     },
 
     // 让 element 与 Widget 实例建立关联
     _stamp: function() {
       var cid = this.cid;
 
-      (this.initElement || this.element).attr(DATA_WIDGET_CID, cid)
+      (this.initElement || this.element).setAttribute(DATA_WIDGET_CID, cid)
       cachedInstances[cid] = this
     },
 
     // 在 this.element 内寻找匹配节点
     $: function(selector) {
-      return this.element.find(selector)
+      return find(selector, this.element);
     },
 
     destroy: function() {
-      this.undelegateEvents()
+      // FIXME
+      // this.undelegateEvents()
       delete cachedInstances[this.cid]
 
       // For memory leak
       if (this.element && this._isTemplate) {
-        this.element.off()
+        off(this.element);
         // 如果是 widget 生成的 element 则去除
         if (this._outerBox) {
           this._outerBox.remove()
@@ -338,20 +337,11 @@ define(function(require, exports, module) {
   })
 
   // For memory leak
-  $(window).unload(function() {
+  window.addEventListener("unload", function() {
     for(var cid in cachedInstances) {
       cachedInstances[cid].destroy()
     }
   })
-
-  // 查询与 selector 匹配的第一个 DOM 节点，得到与该 DOM 节点相关联的 Widget 实例
-  Widget.query = function(selector) {
-    var element = $(selector).eq(0)
-    var cid
-
-    element && (cid = element.attr(DATA_WIDGET_CID))
-    return cachedInstances[cid]
-  }
 
 
   module.exports = Widget
@@ -375,8 +365,7 @@ define(function(require, exports, module) {
     return toString.call(val) === '[object Function]'
   }
 
-  // Zepto 上没有 contains 方法
-  var contains = $.contains || function(a, b) {
+  function contains(a, b) {
     //noinspection JSBitwiseOperatorUsage
     return !!(a.compareDocumentPosition(b) & 16)
   }
@@ -403,7 +392,7 @@ define(function(require, exports, module) {
 
   function parseEventKey(eventKey, widget) {
     var match = eventKey.match(EVENT_KEY_SPLITTER)
-    var eventType = match[1] + DELEGATE_EVENT_NS + widget.cid
+    var eventType = match[1]  // + DELEGATE_EVENT_NS + widget.cid
 
     // 当没有 selector 时，需要设置为 undefined，以使得 zepto 能正确转换为 bind
     var selector = match[2] || undefined
@@ -460,10 +449,137 @@ define(function(require, exports, module) {
     return argus;
   }
 
-  var isDefaultOff = $(document.body).attr('data-api') === 'off';
+  function mix(r, s) {
+    for (var p in s) {
+      r[p] = s[p];
+    }
+    return r;
+  }
+
+  var fragmentRE = /^\s*<(\w+|!)[^>]*>/;
+  var singleTagRE = /^<(\w+)\s*\/?>(?:<\/\1>|)$/;
+  var tagExpanderRE = /<(?!area|br|col|embed|hr|img|input|link|meta|param)(([\w:]+)[^>]*)\/>/ig;
+  var table = document.createElement('table');
+  var tableRow = document.createElement('tr');
+  var containers = {
+      'tr': document.createElement('tbody'),
+      'tbody': table, 'thead': table, 'tfoot': table,
+      'td': tableRow, 'th': tableRow,
+      '*': document.createElement('div')
+    };
+
+  function parseElementFromHTML(html) {
+    var dom, nodes, container
+
+    if (!dom) {
+      if (html.replace) html = html.replace(tagExpanderRE, "<$1></$2>")
+      if (name === undefined) name = fragmentRE.test(html) && RegExp.$1
+      if (!(name in containers)) name = '*'
+
+      container = containers[name]
+      container.innerHTML = '' + html
+      dom = [].slice.call(container.childNodes)[0];
+      container.innerHTML = ''
+    }
+
+    return dom;
+  }
+
+  function find(selector, context) {
+    if (typeof selector === "object") return [selector];
+    else if (typeof selector === "string") {
+      selector = selector.trim();
+      context = context || document;
+      return context.querySelectorAll(selector);
+    } else {
+      return [];
+    }
+  }
+
+  var _aid = 1;
+  var _handlers = {};
+
+  function _isDocument(obj) {
+    return obj != null && obj.nodeType == obj.DOCUMENT_NODE;
+  }
+
+  function _closest(node, selector, context) {
+    var matchesSelector = node.webkitMatchesSelector || node.mozMatchesSelector ||
+                          node.oMatchesSelector || node.matchesSelector
+    while (node && !matchesSelector.call(node, selector)) {
+      node = node != context && !_isDocument(node) && node.parentNode
+    }
+    return node;
+  }
+
+  function on(element, event, selector, fn) {
+    var id = element._aid = element._aid || _aid++;
+    var set = _handlers[id] || (_handlers[id] = []);
+    var handler = {e:event,sel:selector};
+    handler.proxy = function(e) {
+      if (selector) {
+        var match = _closest(e.target, selector, element);
+        if (match && match != element) {
+          fn.apply(match, [e]);
+        }
+      } else {
+        fn.apply(match, [e]);
+      }
+    };
+    set.push(handler);
+    element.addEventListener(event, handler.proxy);
+  }
+
+  function off(element, event, selector) {
+    if (!element._aid) return;
+    var set = _handlers[element._aid];
+    set.forEach(function(handler) {
+      if (!event || event === handler.e) {
+        if (!selector || selector === handler.sel) {
+          element.removeEventListener(handler.e, handler.proxy);
+        }
+      }
+    });
+  }
+
+  function trigger(element, event) {
+    // Support Elements.
+    if ("length" in element) {
+      Array.prototype.forEach.call(element, function(el) {
+        trigger(el, event);
+      });
+      return;
+    }
+
+    var specialEvents = ["click", "mousedown", "mouseup", "mousemove"];
+    var e = document.createEvent(specialEvents.indexOf(event) > -1 ? "MouseEvents" : "Events");
+    e.initEvent(event, true, true);
+    element.dispatchEvent(e);
+  }
+
+  // for test.
+  Widget._trigger = trigger;
+
+  function dasherize(str) {
+    return str.replace(/::/g, '/')
+           .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
+           .replace(/([a-z\d])([A-Z])/g, '$1_$2')
+           .replace(/_/g, '-')
+           .toLowerCase();
+  }
+
+  function css(element, property) {
+    var css = "";
+    for (key in property) {
+      css += dasherize(key) + ':' + property[key] + ';';
+    }
+    element.style.cssText += ';' + css;
+  }
+
+  var isDefaultOff = document.body.getAttribute('data-api') === 'off';
   // 是否没开启 data-api
   function isDataApiOff(element) {
-    var elementDataApi = $(element).attr('data-api')
+    var elementDataApi = element.getAttribute('data-api');
 
     // data-api 默认开启，关闭只有两种方式：
     //  1. element 上有 data-api="off"，表示关闭单个
