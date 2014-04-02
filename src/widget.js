@@ -542,24 +542,6 @@ define(function(require, exports, module) {
     });
   }
 
-  function trigger(element, event) {
-    // Support Elements.
-    if ("length" in element) {
-      Array.prototype.forEach.call(element, function(el) {
-        trigger(el, event);
-      });
-      return;
-    }
-
-    var specialEvents = ["click", "mousedown", "mouseup", "mousemove"];
-    var e = document.createEvent(specialEvents.indexOf(event) > -1 ? "MouseEvents" : "Events");
-    e.initEvent(event, true, true);
-    element.dispatchEvent(e);
-  }
-
-  // for test.
-  Widget._trigger = trigger;
-
   function dasherize(str) {
     return str.replace(/::/g, '/')
            .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
