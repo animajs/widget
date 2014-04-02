@@ -146,9 +146,9 @@ define(function(require) {
         spy1.reset()
         spy2.reset()
   
-        $(widget.$('span')).trigger('mouseenter')
+        trigger($(widget.$('span'))[0], 'mouseenter');
         expect(spy3.called).to.be.ok()
-        expect(event.currentTarget.tagName).to.equal('SPAN')
+        expect(event.target.tagName).to.equal('SPAN')
         expect(that).to.equal(widget)
       })
 
@@ -242,7 +242,7 @@ define(function(require) {
         widget.delegateEvents(dom[0], 'click', spy3)
 
         $(widget.$('p')).trigger('click')
-        $(widget.element).trigger('mouseenter')
+        trigger(widget.element, 'mouseenter')
         $(dom).trigger('click')
         expect(spy1.called).to.be.ok()
         expect(spy2.called).to.be.ok()
@@ -253,7 +253,7 @@ define(function(require) {
 
         widget.undelegateEvents()
         $(widget.$('p')).trigger('click')
-        $(widget.element).trigger('mouseenter')
+        trigger(widget.element, 'mouseenter')
         $(dom).trigger('click')
         expect(spy1.called).not.to.be.ok()
         expect(spy2.called).not.to.be.ok()
@@ -920,6 +920,21 @@ define(function(require) {
       }
       return result
     }
+  }
+
+  function trigger(element, event) {
+    // Support Elements.
+    if ("length" in element) {
+      Array.prototype.forEach.call(element, function(el) {
+        trigger(el, event);
+      });
+      return;
+    }
+
+    var specialEvents = ["click", "mousedown", "mouseup", "mousemove"];
+    var e = document.createEvent(specialEvents.indexOf(event) > -1 ? "MouseEvents" : "Events");
+    e.initEvent(event, true, true);
+    element.dispatchEvent(e);
   }
 
 });

@@ -195,15 +195,13 @@ define(function(require, exports, module) {
       // 卸载所有
       // .undelegateEvents()
       if (argus.length === 0) {
-        var type = DELEGATE_EVENT_NS + this.cid
-
-        this.element && off(this.element, type);
+        this.element && off(this.element);
 
         // 卸载所有外部传入的 element
         if (this._delegateElements) {
           for (var de in this._delegateElements) {
             if (!this._delegateElements.hasOwnProperty(de)) continue
-            off(this._delegateElements[de], type)
+            off(this._delegateElements[de])
           }
         }
 
