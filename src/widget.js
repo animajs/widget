@@ -240,17 +240,7 @@ define(function(require, exports, module) {
         parentNode = parentNode[0];
       }
       if (parentNode && !isInDocument(this.element)) {
-        // 隔离样式，添加统一的命名空间
-        // https://github.com/aliceui/aliceui.org/issues/9
-        var outerBoxClass = this.constructor.outerBoxClass
-        if (outerBoxClass) {
-          var outerBox = this._outerBox = document.createElement("div");
-          outerBox.className = outerBoxClass;
-          outerBox.appendChild(this.element);
-          parentNode.appendChild(outerBox);
-        } else {
-          parentNode.appendChild(this.element);
-        }
+        parentNode.appendChild(this.element);
       }
 
       return this;

@@ -834,21 +834,6 @@ define(function(require) {
       expect(spy.calledOnce).to.be.ok()
     })
 
-    it('outerBox', function() {
-      var TestWidget = require('./test-widget')
-      var container = $('<div id="testContainer"></div>').appendTo(document.body);
-      var widget = new TestWidget({
-        parentNode: '#testContainer'
-      }).render()
-      expect($(widget.element).parent()[0]).to.be.ok()
-      expect($(widget.element).parent()[0]).to.be(container.children()[0])
-      expect($(widget.element).parent().hasClass('arale-text-widget-1_0_0')).to.be.ok()
-
-      widget.destroy()
-      expect($('.arale-text-widget-1_0_0')[0]).not.to.be.ok()
-      container.remove()
-    })
-
     it('set call onRender', function() {
       var spy = sinon.spy()
       var A = Widget.extend({
