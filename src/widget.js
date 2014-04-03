@@ -306,17 +306,15 @@ define(function(require, exports, module) {
       if (this.element && this._isTemplate) {
         off(this.element);
         // 如果是 widget 生成的 element 则去除
-        if (this._outerBox) {
-          this._outerBox.remove();
-        } else {
-          this.element.remove();
+        if (this.element.parentNode) {
+          this.element.parentNode.removeChild(this.element);
         }
       }
       this.element = null;
 
       Widget.superclass.destroy.call(this);
     }
-  })
+  });
 
   // For memory leak
   window.addEventListener("unload", function() {

@@ -13,7 +13,7 @@ define(function(require) {
 
     afterEach(function() {
       for (var v in globalVar) {
-        // globalVar[v].destroy(); 
+        globalVar[v].destroy(); 
       }
       globalVar = {}
     })
@@ -336,6 +336,8 @@ define(function(require) {
         expect(spy1.called).not.to.be.ok()
         expect(spy2.called).not.to.be.ok()
         expect(spy3.called).not.to.be.ok()
+
+        dom.remove();
       })
 
       it('#66 extend delegateEvents', function() {
