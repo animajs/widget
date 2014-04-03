@@ -1,4 +1,4 @@
-define("anima/widget/2.0.0/widget-debug", [ "anima/base/2.0.0/base-debug", "anima/class/2.0.0/class-debug", "anima/events/1.1.0/events-debug", "./daparser-debug", "$-debug" ], function(require, exports, module) {
+define("anima/widget/2.0.0/widget-debug", [ "anima/base/2.0.0/base-debug", "anima/class/2.0.0/class-debug", "anima/events/1.1.0/events-debug", "./daparser-debug" ], function(require, exports, module) {
     // Widget
     // ---------
     // Widget 是与 DOM 元素相关联的非工具类组件，主要负责 View 层的管理。
@@ -413,19 +413,21 @@ define("anima/widget/2.0.0/widget-debug", [ "anima/base/2.0.0/base-debug", "anim
     }
 });
 
-define("anima/widget/2.0.0/daparser-debug", [ "$-debug" ], function(require, exports) {
+define("anima/widget/2.0.0/daparser-debug", [], function(require, exports) {
     // DAParser
     // --------
     // data api 解析器，提供对单个 element 的解析，可用来初始化页面中的所有 Widget 组件。
-    var $ = require("$-debug");
     // 得到某个 DOM 元素的 dataset
     exports.parseElement = function(element, raw) {
-        element = $(element)[0];
         var dataset = {};
+        // if element is jQuery/Zepto object.
+        if (element[0]) {
+            element = element[0];
+        }
         // ref: https://developer.mozilla.org/en/DOM/element.dataset
         if (element.dataset) {
             // 转换成普通对象
-            dataset = $.extend({}, element.dataset);
+            dataset = mix({}, element.dataset);
         } else {
             var attrs = element.attributes;
             for (var i = 0, len = attrs.length; i < len; i++) {
@@ -443,7 +445,7 @@ define("anima/widget/2.0.0/daparser-debug", [ "$-debug" ], function(require, exp
     // ------
     var RE_DASH_WORD = /-([a-z])/g;
     var JSON_LITERAL_PATTERN = /^\s*[\[{].*[\]}]\s*$/;
-    var parseJSON = this.JSON ? JSON.parse : $.parseJSON;
+    var parseJSON = JSON.parse;
     // 仅处理字母开头的，其他情况转换为小写："data-x-y-123-_A" --> xY-123-_a
     function camelCase(str) {
         return str.toLowerCase().replace(RE_DASH_WORD, function(all, letter) {
@@ -481,5 +483,11 @@ define("anima/widget/2.0.0/daparser-debug", [ "$-debug" ], function(require, exp
             }
         }
         return val;
+    }
+    function mix(r, s) {
+        for (var p in s) {
+            r[p] = s[p];
+        }
+        return r;
     }
 });
