@@ -83,7 +83,7 @@ define(function(require, exports, module) {
       }
 
       // 解析 data-api 时，只考虑用户传入的 element，不考虑来自继承或从模板构建的
-      if (element && !isDataApiOff(element)) {
+      if (element) {
         dataAttrsConfig = DAParser.parseElement(element)
       }
 
@@ -554,18 +554,6 @@ define(function(require, exports, module) {
       css += dasherize(key) + ':' + property[key] + ';';
     }
     element.style.cssText += ';' + css;
-  }
-
-  var isDefaultOff = document.body.getAttribute('data-api') === 'off';
-  // 是否没开启 data-api
-  function isDataApiOff(element) {
-    var elementDataApi = element.getAttribute('data-api');
-
-    // data-api 默认开启，关闭只有两种方式：
-    //  1. element 上有 data-api="off"，表示关闭单个
-    //  2. document.body 上有 data-api="off"，表示关闭所有
-    return  elementDataApi === 'off' ||
-        (elementDataApi !== 'on' && isDefaultOff)
   }
 
 });
