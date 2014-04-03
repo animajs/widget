@@ -66,13 +66,13 @@ define(function(require) {
 
       // 如果 config 里不传 element，默认用 $('<div></div>') 构建
       var widget = globalVar.widget = new Widget()
-      expect(widget.element.tagName).to.equal('DIV')
+      expect(widget.element.tagName).to.equal('DIV');
 
-      // 如果传入 selector，会自动转为为 $ 对象
+      // 传入 selector
       widget = globalVar.widget = new Widget({ element: '#a' })
       expect(widget.element.id).to.equal('a')
 
-      // 如果传入 DOM 对象，会自动转换为 $ 对象
+      // 传入 DOM 对象
       widget = globalVar.widget = new Widget({ element: document.getElementById('a') })
       expect(widget.element.id).to.equal('a')
 

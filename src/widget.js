@@ -52,27 +52,27 @@ define(function(require, exports, module) {
     // 初始化方法，确定组件创建时的基本流程：
     // 初始化 attrs --》 初始化 props --》 初始化 events --》 子类的初始化
     initialize: function(config) {
-      this.cid = uniqueCid()
+      this.cid = uniqueCid();
 
       // 初始化 attrs
-      var dataAttrsConfig = this._parseDataAttrsConfig(config)
-      Widget.superclass.initialize.call(this, config ? mix(dataAttrsConfig || {}, config) : dataAttrsConfig)
+      var dataAttrsConfig = this._parseDataAttrsConfig(config);
+      Widget.superclass.initialize.call(this, config ? mix(dataAttrsConfig || {}, config) : dataAttrsConfig);
 
       // 初始化 props
-      this.parseElement()
-      this.initProps()
+      this.parseElement();
+      this.initProps();
 
       // 初始化 events
-      this.delegateEvents()
+      this.delegateEvents();
 
       // 子类自定义的初始化
-      this.setup()
+      this.setup();
 
       // 保存实例信息
-      this._stamp()
+      this._stamp();
 
       // 是否由 template 初始化
-      this._isTemplate = !(config && config.element)
+      this._isTemplate = !(config && config.element);
     },
 
     // 解析通过 data-attr 设置的 api
@@ -98,19 +98,14 @@ define(function(require, exports, module) {
         this.element = find(element)[0];
       }
       // 未传入 element 时，从 template 构建
-      else if (!this.element && this.get('template')) {
-        this.parseElementFromTemplate()
+      else if (!element && this.get('template')) {
+        this.element = parseElementFromHTML(this.get('template'));
       }
 
       // 如果对应的 DOM 元素不存在，则报错
       if (!this.element) {
         throw new Error('element is invalid')
       }
-    },
-
-    // 从模板中构建 this.element
-    parseElementFromTemplate: function() {
-      this.element = parseElementFromHTML(this.get('template'))
     },
 
     // 负责 properties 的初始化，提供给子类覆盖
@@ -122,8 +117,8 @@ define(function(require, exports, module) {
       var argus = trimRightUndefine(Array.prototype.slice.call(arguments));
       // widget.delegateEvents()
       if (argus.length === 0) {
-        events = getEvents(this)
-        element = this.element
+        events = getEvents(this);
+        element = this.element;
       }
 
       // widget.delegateEvents({
@@ -131,56 +126,56 @@ define(function(require, exports, module) {
       //   'click li': 'fn2'
       // })
       else if (argus.length === 1) {
-        events = element
-        element = this.element
+        events = element;
+        element = this.element;
       }
 
       // widget.delegateEvents('click p', function(ev) { ... })
       else if (argus.length === 2) {
-        handler = events
-        events = element
-        element = this.element
+        handler = events;
+        events = element;
+        element = this.element;
       }
 
       // widget.delegateEvents(element, 'click p', function(ev) { ... })
       else {
-        element || (element = this.element)
-        this._delegateElements || (this._delegateElements = [])
-        this._delegateElements.push(element)
+        element || (element = this.element);
+        this._delegateElements || (this._delegateElements = []);
+        this._delegateElements.push(element);
       }
 
       // 'click p' => {'click p': handler}
       if (isString(events) && isFunction(handler)) {
-        var o = {}
-        o[events] = handler
-        events = o
+        var o = {};
+        o[events] = handler;
+        events = o;
       }
 
       // key 为 'event selector'
       for (var key in events) {
-        if (!events.hasOwnProperty(key)) continue
+        if (!events.hasOwnProperty(key)) continue;
 
-        var args = parseEventKey(key, this)
-        var eventType = args.type
-        var selector = args.selector
+        var args = parseEventKey(key, this);
+        var eventType = args.type;
+        var selector = args.selector;
 
-        ;(function(handler, widget) {
+        (function(handler, widget) {
 
           var callback = function(ev) {
             if (isFunction(handler)) {
-              handler.call(widget, ev)
+              handler.call(widget, ev);
             } else {
-              widget[handler](ev)
+              widget[handler](ev);
             }
           }
 
           // delegate
           on(element, eventType, selector, callback);
 
-        })(events[key], this)
+        })(events[key], this);
       }
 
-      return this
+      return this;
     },
 
     // 卸载事件代理
@@ -188,8 +183,8 @@ define(function(require, exports, module) {
       var argus = trimRightUndefine(Array.prototype.slice.call(arguments));
 
       if (!eventKey) {
-        eventKey = element
-        element = null
+        eventKey = element;
+        element = null;
       }
 
       // 卸载所有
@@ -200,27 +195,27 @@ define(function(require, exports, module) {
         // 卸载所有外部传入的 element
         if (this._delegateElements) {
           for (var de in this._delegateElements) {
-            if (!this._delegateElements.hasOwnProperty(de)) continue
-            off(this._delegateElements[de])
+            if (!this._delegateElements.hasOwnProperty(de)) continue;
+            off(this._delegateElements[de]);
           }
         }
 
       } else {
-        var args = parseEventKey(eventKey, this)
+        var args = parseEventKey(eventKey, this);
 
         // 卸载 this.element
         // .undelegateEvents(events)
         if (!element) {
-          this.element && off(this.element, args.type, args.selector)
+          this.element && off(this.element, args.type, args.selector);
         }
 
         // 卸载外部 element
         // .undelegateEvents(element, events)
         else {
-          off(element, args.type, args.selector)
+          off(element, args.type, args.selector);
         }
       }
-      return this
+      return this;
     },
 
     // 提供给子类覆盖的初始化方法
@@ -234,13 +229,13 @@ define(function(require, exports, module) {
 
       // 让渲染相关属性的初始值生效，并绑定到 change 事件
       if (!this.rendered) {
-        this._renderAndBindAttrs()
-        this.rendered = true
+        this._renderAndBindAttrs();
+        this.rendered = true;
       }
 
       // 插入到文档流中
       var parentNode = find(this.get('parentNode'))[0];
-      // parentNode 支持 jQuery|zepto Object.
+      // 如果 parentNode 是 jQuery|zepto 对象
       if (!parentNode.appendChild && parentNode[0] && parentNode[0].appendChild) {
         parentNode = parentNode[0];
       }
@@ -258,42 +253,42 @@ define(function(require, exports, module) {
         }
       }
 
-      return this
+      return this;
     },
 
     // 让属性的初始值生效，并绑定到 change:attr 事件上
     _renderAndBindAttrs: function() {
-      var widget = this
-      var attrs = widget.attrs
+      var widget = this;
+      var attrs = widget.attrs;
 
       for (var attr in attrs) {
-        if (!attrs.hasOwnProperty(attr)) continue
-        var m = ON_RENDER + ucfirst(attr)
+        if (!attrs.hasOwnProperty(attr)) continue;
+        var m = ON_RENDER + ucfirst(attr);
 
         if (this[m]) {
-          var val = this.get(attr)
+          var val = this.get(attr);
 
           // 让属性的初始值生效。注：默认空值不触发
           if (!isEmptyAttrValue(val)) {
-            this[m](val, undefined, attr)
+            this[m](val, undefined, attr);
           }
 
           // 将 _onRenderXx 自动绑定到 change:xx 事件上
           (function(m) {
             widget.on('change:' + attr, function(val, prev, key) {
-              widget[m](val, prev, key)
+              widget[m](val, prev, key);
             })
-          })(m)
+          })(m);
         }
       }
     },
 
     _onRenderId: function(val) {
-      this.element.attr('id', val)
+      this.element.attr('id', val);
     },
 
     _onRenderClassName: function(val) {
-      this.element.addClass(val)
+      this.element.addClass(val);
     },
 
     _onRenderStyle: function(val) {
@@ -304,8 +299,8 @@ define(function(require, exports, module) {
     _stamp: function() {
       var cid = this.cid;
 
-      (this.initElement || this.element).setAttribute(DATA_WIDGET_CID, cid)
-      cachedInstances[cid] = this
+      (this.initElement || this.element).setAttribute(DATA_WIDGET_CID, cid);
+      cachedInstances[cid] = this;
     },
 
     // 在 this.element 内寻找匹配节点
@@ -314,78 +309,72 @@ define(function(require, exports, module) {
     },
 
     destroy: function() {
-      // FIXME
-      // this.undelegateEvents()
-      delete cachedInstances[this.cid]
+      this.undelegateEvents()
+      delete cachedInstances[this.cid];
 
       // For memory leak
       if (this.element && this._isTemplate) {
         off(this.element);
         // 如果是 widget 生成的 element 则去除
         if (this._outerBox) {
-          this._outerBox.remove()
+          this._outerBox.remove();
         } else {
-          this.element.remove()
+          this.element.remove();
         }
       }
-      this.element = null
+      this.element = null;
 
-      Widget.superclass.destroy.call(this)
+      Widget.superclass.destroy.call(this);
     }
   })
 
   // For memory leak
   window.addEventListener("unload", function() {
     for(var cid in cachedInstances) {
-      cachedInstances[cid].destroy()
+      cachedInstances[cid].destroy();
     }
-  })
+  });
 
 
-  module.exports = Widget
+  module.exports = Widget;
 
 
   // Helpers
   // ------
 
-  var toString = Object.prototype.toString
-  var cidCounter = 0
+  var toString = Object.prototype.toString;
+  var cidCounter = 0;
 
   function uniqueCid() {
-    return 'widget-' + cidCounter++
+    return 'widget-' + cidCounter++;
   }
 
   function isString(val) {
-    return toString.call(val) === '[object String]'
+    return toString.call(val) === '[object String]';
   }
 
   function isFunction(val) {
-    return toString.call(val) === '[object Function]'
-  }
-
-  function contains(a, b) {
-    //noinspection JSBitwiseOperatorUsage
-    return !!(a.compareDocumentPosition(b) & 16)
+    return toString.call(val) === '[object Function]';
   }
 
   function isInDocument(element) {
-    return contains(document.documentElement, element)
+    return !!(document.documentElement.compareDocumentPosition(element) & 16);
   }
 
   function ucfirst(str) {
-    return str.charAt(0).toUpperCase() + str.substring(1)
+    return str.charAt(0).toUpperCase() + str.substring(1);
   }
 
 
-  var EVENT_KEY_SPLITTER = /^(\S+)\s*(.*)$/
-  var EXPRESSION_FLAG = /{{([^}]+)}}/g
-  var INVALID_SELECTOR = 'INVALID_SELECTOR'
+  var EVENT_KEY_SPLITTER = /^(\S+)\s*(.*)$/;
+  var EXPRESSION_FLAG = /{{([^}]+)}}/g;
+  var INVALID_SELECTOR = 'INVALID_SELECTOR';
 
   function getEvents(widget) {
     if (isFunction(widget.events)) {
-      widget.events = widget.events()
+      widget.events = widget.events();
     }
-    return widget.events
+    return widget.events;
   }
 
   function parseEventKey(eventKey, widget) {
@@ -467,18 +456,16 @@ define(function(require, exports, module) {
     };
 
   function parseElementFromHTML(html) {
-    var dom, nodes, container
+    var dom, nodes, container;
 
-    if (!dom) {
-      if (html.replace) html = html.replace(tagExpanderRE, "<$1></$2>")
-      if (name === undefined) name = fragmentRE.test(html) && RegExp.$1
-      if (!(name in containers)) name = '*'
+    if (html.replace) html = html.replace(tagExpanderRE, "<$1></$2>");
+    if (name === undefined) name = fragmentRE.test(html) && RegExp.$1;
+    if (!(name in containers)) name = '*';
 
-      container = containers[name]
-      container.innerHTML = '' + html
-      dom = [].slice.call(container.childNodes)[0];
-      container.innerHTML = ''
-    }
+    container = containers[name];
+    container.innerHTML = '' + html;
+    dom = [].slice.call(container.childNodes)[0];
+    container.innerHTML = '';
 
     return dom;
   }
