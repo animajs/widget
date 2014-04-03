@@ -4,18 +4,19 @@ define(function(require, exports) {
   // --------
   // data api 解析器，提供对单个 element 的解析，可用来初始化页面中的所有 Widget 组件。
 
-  var $ = require('$')
-
-
   // 得到某个 DOM 元素的 dataset
   exports.parseElement = function(element, raw) {
-    element = $(element)[0]
     var dataset = {}
+
+    // if element is jQuery/Zepto object.
+    if (element[0]) {
+      element = element[0];
+    }
 
     // ref: https://developer.mozilla.org/en/DOM/element.dataset
     if (element.dataset) {
       // 转换成普通对象
-      dataset = $.extend({}, element.dataset)
+      dataset = mix({}, element.dataset)
     }
     else {
       var attrs = element.attributes
@@ -40,7 +41,7 @@ define(function(require, exports) {
 
   var RE_DASH_WORD = /-([a-z])/g
   var JSON_LITERAL_PATTERN = /^\s*[\[{].*[\]}]\s*$/
-  var parseJSON = this.JSON ? JSON.parse : $.parseJSON
+  var parseJSON = JSON.parse
 
   // 仅处理字母开头的，其他情况转换为小写："data-x-y-123-_A" --> xY-123-_a
   function camelCase(str) {
@@ -88,6 +89,13 @@ define(function(require, exports) {
     }
 
     return val
+  }
+
+  function mix(r, s) {
+    for (var p in s) {
+      r[p] = s[p];
+    }
+    return r;
   }
 
 });
