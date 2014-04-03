@@ -62,7 +62,7 @@ define("anima/widget/2.0.0/widget-debug", [ "anima/base/2.0.0/base-debug", "anim
                 element = config.initElement ? find(config.initElement)[0] : find(config.element)[0];
             }
             // 解析 data-api 时，只考虑用户传入的 element，不考虑来自继承或从模板构建的
-            if (element && !isDataApiOff(element)) {
+            if (element) {
                 dataAttrsConfig = DAParser.parseElement(element);
             }
             return dataAttrsConfig;
@@ -72,17 +72,13 @@ define("anima/widget/2.0.0/widget-debug", [ "anima/base/2.0.0/base-debug", "anim
             var element = this.element;
             if (element) {
                 this.element = find(element)[0];
-            } else if (!this.element && this.get("template")) {
-                this.parseElementFromTemplate();
+            } else if (!element && this.get("template")) {
+                this.element = parseElementFromHTML(this.get("template"));
             }
             // 如果对应的 DOM 元素不存在，则报错
             if (!this.element) {
                 throw new Error("element is invalid");
             }
-        },
-        // 从模板中构建 this.element
-        parseElementFromTemplate: function() {
-            this.element = parseElementFromHTML(this.get("template"));
         },
         // 负责 properties 的初始化，提供给子类覆盖
         initProps: function() {},
@@ -174,22 +170,12 @@ define("anima/widget/2.0.0/widget-debug", [ "anima/base/2.0.0/base-debug", "anim
             }
             // 插入到文档流中
             var parentNode = find(this.get("parentNode"))[0];
-            // parentNode 支持 jQuery|zepto Object.
+            // 如果 parentNode 是 jQuery|zepto 对象
             if (!parentNode.appendChild && parentNode[0] && parentNode[0].appendChild) {
                 parentNode = parentNode[0];
             }
             if (parentNode && !isInDocument(this.element)) {
-                // 隔离样式，添加统一的命名空间
-                // https://github.com/aliceui/aliceui.org/issues/9
-                var outerBoxClass = this.constructor.outerBoxClass;
-                if (outerBoxClass) {
-                    var outerBox = this._outerBox = document.createElement("div");
-                    outerBox.className = outerBoxClass;
-                    outerBox.appendChild(this.element);
-                    parentNode.appendChild(outerBox);
-                } else {
-                    parentNode.appendChild(this.element);
-                }
+                parentNode.appendChild(this.element);
             }
             return this;
         },
@@ -235,17 +221,14 @@ define("anima/widget/2.0.0/widget-debug", [ "anima/base/2.0.0/base-debug", "anim
             return find(selector, this.element);
         },
         destroy: function() {
-            // FIXME
-            // this.undelegateEvents()
+            this.undelegateEvents();
             delete cachedInstances[this.cid];
             // For memory leak
             if (this.element && this._isTemplate) {
                 off(this.element);
                 // 如果是 widget 生成的 element 则去除
-                if (this._outerBox) {
-                    this._outerBox.remove();
-                } else {
-                    this.element.remove();
+                if (this.element.parentNode) {
+                    this.element.parentNode.removeChild(this.element);
                 }
             }
             this.element = null;
@@ -272,12 +255,8 @@ define("anima/widget/2.0.0/widget-debug", [ "anima/base/2.0.0/base-debug", "anim
     function isFunction(val) {
         return toString.call(val) === "[object Function]";
     }
-    function contains(a, b) {
-        //noinspection JSBitwiseOperatorUsage
-        return !!(a.compareDocumentPosition(b) & 16);
-    }
     function isInDocument(element) {
-        return contains(document.documentElement, element);
+        return !!(document.documentElement.compareDocumentPosition(element) & 16);
     }
     function ucfirst(str) {
         return str.charAt(0).toUpperCase() + str.substring(1);
@@ -361,15 +340,13 @@ define("anima/widget/2.0.0/widget-debug", [ "anima/base/2.0.0/base-debug", "anim
     };
     function parseElementFromHTML(html) {
         var dom, nodes, container;
-        if (!dom) {
-            if (html.replace) html = html.replace(tagExpanderRE, "<$1></$2>");
-            if (name === undefined) name = fragmentRE.test(html) && RegExp.$1;
-            if (!(name in containers)) name = "*";
-            container = containers[name];
-            container.innerHTML = "" + html;
-            dom = [].slice.call(container.childNodes)[0];
-            container.innerHTML = "";
-        }
+        if (html.replace) html = html.replace(tagExpanderRE, "<$1></$2>");
+        if (name === undefined) name = fragmentRE.test(html) && RegExp.$1;
+        if (!(name in containers)) name = "*";
+        container = containers[name];
+        container.innerHTML = "" + html;
+        dom = [].slice.call(container.childNodes)[0];
+        container.innerHTML = "";
         return dom;
     }
     function find(selector, context) {
@@ -433,15 +410,6 @@ define("anima/widget/2.0.0/widget-debug", [ "anima/base/2.0.0/base-debug", "anim
             css += dasherize(key) + ":" + property[key] + ";";
         }
         element.style.cssText += ";" + css;
-    }
-    var isDefaultOff = document.body.getAttribute("data-api") === "off";
-    // 是否没开启 data-api
-    function isDataApiOff(element) {
-        var elementDataApi = element.getAttribute("data-api");
-        // data-api 默认开启，关闭只有两种方式：
-        //  1. element 上有 data-api="off"，表示关闭单个
-        //  2. document.body 上有 data-api="off"，表示关闭所有
-        return elementDataApi === "off" || elementDataApi !== "on" && isDefaultOff;
     }
 });
 
