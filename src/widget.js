@@ -19,7 +19,7 @@ define(function(require, exports, module) {
   var Widget = Base.extend({
 
     // config 中的这些键值会直接添加到实例上，转换成 properties
-    propsInAttrs: ['initElement', 'element', 'events'],
+    propsInAttrs: ['initElement', 'element', 'events', 'plugins'],
 
     // 与 widget 关联的 DOM 元素
     element: null,
@@ -31,6 +31,9 @@ define(function(require, exports, module) {
     //     'click .open': function(ev) { ... }
     //   }
     events: null,
+
+    // 插件列表
+    plugins: [],
 
     // 属性列表
     attrs: {
@@ -66,6 +69,7 @@ define(function(require, exports, module) {
       this.delegateEvents();
 
       // 子类自定义的初始化
+      this._runPlugins("setup");
       this.setup();
 
       // 保存实例信息
@@ -233,6 +237,8 @@ define(function(require, exports, module) {
         this.rendered = true;
       }
 
+      this._runPlugins("render");
+
       // 插入到文档流中
       var parentNode = find(this.get('parentNode'))[0];
       // 如果 parentNode 是 jQuery|zepto 对象
@@ -293,12 +299,20 @@ define(function(require, exports, module) {
       cachedInstances[cid] = this;
     },
 
+    _runPlugins: function(method) {
+      this.plugins.forEach((function(plugin) {
+        plugin[method] && plugin[method].call(this);
+      }).bind(this));
+    },
+
     // 在 this.element 内寻找匹配节点
     $: function(selector) {
       return find(selector, this.element);
     },
 
     destroy: function() {
+      this._runPlugins("destroy");
+
       this.undelegateEvents()
       delete cachedInstances[this.cid];
 
