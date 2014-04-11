@@ -564,6 +564,21 @@ define(function(require) {
       expect(p.join()).to.equal('')
     })
 
+    it('render id, className and style', function() {
+      var a = new Widget({
+        id: "foo",
+        className: "bar",
+        style: {
+          display: "block"
+        }
+      });
+  
+      a.render();
+      expect(a.element.attr("id")).to.equal("foo");
+      expect(a.element.hasClass("bar")).to.equal(true);
+      expect(a.element.css("display")).to.equal("block");
+    });
+
     it('default values in attrs', function() {
       var boolSpy = sinon.spy()
       var strSpy = sinon.spy()

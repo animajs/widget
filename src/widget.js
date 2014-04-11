@@ -276,7 +276,7 @@ define(function(require, exports, module) {
     },
 
     _onRenderClassName: function(val) {
-      this.element.addClass(this.element, val);
+      this.element.addClass(val);
     },
 
     _onRenderStyle: function(val) {
