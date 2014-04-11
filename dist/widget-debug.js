@@ -1,10 +1,10 @@
-define("anima/widget/2.0.0/widget-debug", [ "anima/base/2.0.0/base-debug", "anima/class/2.0.0/class-debug", "anima/events/1.1.0/events-debug", "anima/zepto/1.0.0/zepto-debug", "./daparser-debug" ], function(require, exports, module) {
+define("anima/widget/1.0.0/widget-debug", [ "anima/base/1.0.0/base-debug", "anima/class/2.0.0/class-debug", "anima/events/1.1.0/events-debug", "anima/base/1.0.0/aspect-debug", "anima/base/1.0.0/attribute-debug", "anima/zepto/1.0.0/zepto-debug", "./daparser-debug" ], function(require, exports, module) {
     // Widget
     // ---------
     // Widget 是与 DOM 元素相关联的非工具类组件，主要负责 View 层的管理。
     // Widget 组件具有四个要素：描述状态的 attributes 和 properties，描述行为的 events
     // 和 methods。Widget 基类约定了这四要素创建时的基本流程和最佳实践。
-    var Base = require("anima/base/2.0.0/base-debug");
+    var Base = require("anima/base/1.0.0/base-debug");
     var $ = require("anima/zepto/1.0.0/zepto-debug");
     var DAParser = require("./daparser-debug");
     var DELEGATE_EVENT_NS = ".delegate-events-";
@@ -314,7 +314,7 @@ define("anima/widget/2.0.0/widget-debug", [ "anima/base/2.0.0/base-debug", "anim
     }
 });
 
-define("anima/widget/2.0.0/daparser-debug", [], function(require, exports) {
+define("anima/widget/1.0.0/daparser-debug", [], function(require, exports) {
     // DAParser
     // --------
     // data api 解析器，提供对单个 element 的解析，可用来初始化页面中的所有 Widget 组件。
