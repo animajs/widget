@@ -203,7 +203,7 @@ define("anima/widget/2.0.0/widget-debug", [ "anima/base/2.0.0/base-debug", "anim
             this.element.attr("id", val);
         },
         _onRenderClassName: function(val) {
-            this.element.addClass(this.element, val);
+            this.element.addClass(val);
         },
         _onRenderStyle: function(val) {
             this.element.css(val);
