@@ -19,7 +19,7 @@
     },
     "spm": {
         "alias": {
-            "$": "$",
+            "zepto": "anima/zepto/1.0.0/zepto",
             "base": "anima/base/2.0.0/base"
         },
         "output": ["widget.js"]

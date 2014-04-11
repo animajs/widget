@@ -1,10 +1,9 @@
-
 define(function(require) {
 
   var Widget = require('widget')
   var DAParser = require('daparser')
   var expect = require('expect')
-  var $ = require('$')
+  var $ = require('zepto')
   var sinon = require('sinon')
 
 
@@ -56,7 +55,7 @@ define(function(require) {
       expect(a.get('model').content).to.equal('default content')
 
       // attr 式属性
-      expect(a.element.id).to.equal('a')
+      expect(a.element[0].id).to.equal('a')
 
       div.remove()
     })
@@ -66,15 +65,19 @@ define(function(require) {
 
       // 如果 config 里不传 element，默认用 $('<div></div>') 构建
       var widget = globalVar.widget = new Widget()
-      expect(widget.element.tagName).to.equal('DIV');
+      expect(widget.element[0].tagName).to.equal('DIV')
 
-      // 传入 selector
+      // 如果传入 selector，会自动转为为 $ 对象
       widget = globalVar.widget = new Widget({ element: '#a' })
-      expect(widget.element.id).to.equal('a')
+      expect(widget.element[0].id).to.equal('a')
 
-      // 传入 DOM 对象
+      // 如果传入 DOM 对象，会自动转换为 $ 对象
       widget = globalVar.widget = new Widget({ element: document.getElementById('a') })
-      expect(widget.element.id).to.equal('a')
+      expect(widget.element[0].id).to.equal('a')
+
+      // 如果传入 $ 对象，保持不变
+      widget = globalVar.widget = new Widget({ element: $('#a') })
+      expect(widget.element[0].id).to.equal('a')
 
       // 如果传入的 dom 对象不存在，则报错
       try {
@@ -85,11 +88,11 @@ define(function(require) {
 
       // 同时传入 template 和 element 时，element 优先
       widget = globalVar.widget = new Widget({ element: '#a', template: '<span></span>' })
-      expect(widget.element.tagName).to.equal('DIV')
+      expect(widget.element[0].tagName).to.equal('DIV')
 
       // 只传入 template 时，从 template 构建
       widget = globalVar.widget = new Widget({ template: '<span></span>' })
-      expect(widget.element.tagName).to.equal('SPAN')
+      expect(widget.element[0].tagName).to.equal('SPAN')
 
       div.remove()
     })
@@ -118,7 +121,7 @@ define(function(require) {
           events: {
             'click p': 'fn1',
             'click li': 'fn2',
-            'mouseenter span': 'fn3'
+            'click span': 'fn3'
           },
           fn1: spy1,
           fn2: spy2,
@@ -133,23 +136,23 @@ define(function(require) {
           template: '<div><p></p><ul><li></li></ul><span></span></div>'
         }).render()
 
-        $(widget.$('p')).trigger('click')
+        widget.$('p').trigger('click')
         expect(spy1.called).to.be.ok()
         spy1.reset()
   
-        $(widget.$('li')).trigger('click')
+        widget.$('li').trigger('click')
         expect(spy2.called).to.be.ok()
         spy2.reset()
   
-        $(widget.element).trigger('click')
+        widget.element.trigger('click')
         expect(spy1.called).not.to.be.ok()
         expect(spy2.called).not.to.be.ok()
         spy1.reset()
         spy2.reset()
   
-        trigger($(widget.$('span'))[0], 'mouseenter');
+        widget.$('span').trigger('click')
         expect(spy3.called).to.be.ok()
-        expect(event.target.tagName).to.equal('SPAN')
+        expect(event.currentTarget.tagName).to.equal('SPAN')
         expect(that).to.equal(widget)
       })
 
@@ -168,10 +171,10 @@ define(function(require) {
           'click span': spy2
         })
 
-        $(widget.$('p')).trigger('click')
+        widget.$('p').trigger('click')
         expect(spy1.called).to.be.ok()
 
-        $(widget.$('span')).trigger('click')
+        widget.$('span').trigger('click')
         expect(spy1.called).to.be.ok()
       });
 
@@ -182,33 +185,35 @@ define(function(require) {
         }).render()
 
         widget.delegateEvents('click p', spy)
-        $(widget.$('p')).trigger('click')
+        widget.$('p').trigger('click')
         expect(spy.called).to.be.ok()
       });
 
       it('delegateEvents(element, events, handler)', function() {
-        var dom = $('<div><p></p></div>').appendTo("body");
+        var dom = $('<div><p></p></div>').appendTo("body")
         var spy1 = sinon.spy()
         var spy2 = sinon.spy()
         var widget = globalVar.widget = new Widget({
           template: '<div><p></p><ul><li></li></ul><span></span></div>'
         }).render()
 
-        widget.delegateEvents(dom[0], 'click', spy1)
-        widget.delegateEvents(dom[0], 'click p', spy2)
+        widget.delegateEvents(dom, 'click', spy1)
+        widget.delegateEvents(dom, 'click p', spy2)
 
-        $(widget.$('p')).trigger('click')
+        widget.$('p').trigger('click')
         expect(spy2.called).not.to.be.ok()
 
-        $(dom).trigger('click')
+        dom.trigger('click')
         expect(spy1.called).to.be.ok()
         expect(spy2.called).not.to.be.ok()
         spy1.reset()
         spy2.reset()
 
-        $(dom.find('p')).trigger('click')
+        dom.find('p').trigger('click')
         expect(spy1.called).to.be.ok()
         expect(spy2.called).to.be.ok()
+
+        dom.remove();
       });
 
       it('delegateEvents support normal element', function() {
@@ -236,15 +241,15 @@ define(function(require) {
 
         widget.delegateEvents({
           'click p': spy1,
-          'mouseenter': spy2
+          'mousemove': spy2
         })
 
         var dom = $('<div></div>')
-        widget.delegateEvents(dom[0], 'click', spy3)
+        widget.delegateEvents(dom, 'click', spy3)
 
-        $(widget.$('p')).trigger('click')
-        trigger(widget.element, 'mouseenter')
-        $(dom).trigger('click')
+        widget.$('p').trigger('click')
+        widget.element.trigger('mousemove')
+        dom.trigger('click')
         expect(spy1.called).to.be.ok()
         expect(spy2.called).to.be.ok()
         expect(spy3.called).to.be.ok()
@@ -253,9 +258,9 @@ define(function(require) {
         spy3.reset()
 
         widget.undelegateEvents()
-        $(widget.$('p')).trigger('click')
-        trigger(widget.element, 'mouseenter')
-        $(dom).trigger('click')
+        widget.$('p').trigger('click')
+        widget.element.trigger('mouseenter')
+        dom.trigger('click')
         expect(spy1.called).not.to.be.ok()
         expect(spy2.called).not.to.be.ok()
         expect(spy3.called).not.to.be.ok()
@@ -275,9 +280,9 @@ define(function(require) {
           'click li': spy3
         })
 
-        $(widget.$('p')).trigger('click')
-        $(widget.$('span')).trigger('click')
-        $(widget.$('li')).trigger('click')
+        widget.$('p').trigger('click')
+        widget.$('span').trigger('click')
+        widget.$('li').trigger('click')
         expect(spy1.called).to.be.ok()
         expect(spy2.called).to.be.ok()
         expect(spy3.called).to.be.ok()
@@ -286,9 +291,9 @@ define(function(require) {
         spy3.reset()
 
         widget.undelegateEvents('click span')
-        $(widget.$('p')).trigger('click')
-        $(widget.$('span')).trigger('click')
-        $(widget.$('li')).trigger('click')
+        widget.$('p').trigger('click')
+        widget.$('span').trigger('click')
+        widget.$('li').trigger('click')
         expect(spy1.called).to.be.ok()
         expect(spy2.called).not.to.be.ok()
         expect(spy3.called).to.be.ok()
@@ -297,9 +302,9 @@ define(function(require) {
         spy3.reset()
 
         widget.undelegateEvents('click')
-        $(widget.$('p')).trigger('click')
-        $(widget.$('span')).trigger('click')
-        $(widget.$('li')).trigger('click')
+        widget.$('p').trigger('click')
+        widget.$('span').trigger('click')
+        widget.$('li').trigger('click')
         expect(spy1.called).not.to.be.ok()
         expect(spy2.called).not.to.be.ok()
         expect(spy3.called).not.to.be.ok()
@@ -314,14 +319,14 @@ define(function(require) {
           template: '<div><p></p><ul><li></li></ul><span></span></div>'
         }).render()
 
-        widget.delegateEvents(dom[0], 'click p', spy1)
-        widget.delegateEvents(dom[0], 'click li', spy2)
-        widget.delegateEvents(dom[0], 'click span', spy3)
+        widget.delegateEvents(dom, 'click p', spy1)
+        widget.delegateEvents(dom, 'click li', spy2)
+        widget.delegateEvents(dom, 'click span', spy3)
 
-        widget.undelegateEvents(dom[0], 'click li')
-        $(dom.find('p')).trigger('click')
-        $(dom.find('li')).trigger('click')
-        $(dom.find('span')).trigger('click')
+        widget.undelegateEvents(dom, 'click li')
+        dom.find('p').trigger('click')
+        dom.find('li').trigger('click')
+        dom.find('span').trigger('click')
         expect(spy1.called).to.be.ok()
         expect(spy2.called).not.to.be.ok()
         expect(spy3.called).to.be.ok()
@@ -329,10 +334,10 @@ define(function(require) {
         spy2.reset()
         spy3.reset()
 
-        widget.undelegateEvents(dom[0], 'click')
-        $(dom.find('p')).trigger('click')
-        $(dom.find('li')).trigger('click')
-        $(dom.find('span')).trigger('click')
+        widget.undelegateEvents(dom, 'click')
+        dom.find('p').trigger('click')
+        dom.find('li').trigger('click')
+        dom.find('span').trigger('click')
         expect(spy1.called).not.to.be.ok()
         expect(spy2.called).not.to.be.ok()
         expect(spy3.called).not.to.be.ok()
@@ -357,7 +362,7 @@ define(function(require) {
           template: '<div><p></p><ul><li></li></ul><span></span></div>'
         }).render()
 
-        $(widget.$('p')).trigger('click')
+        widget.$('p').trigger('click')
         expect(spy.called).to.be.ok()
       });
     })
@@ -383,11 +388,11 @@ define(function(require) {
         template: '<div><h3></h3><p></p></div>'
       }).render()
 
-      $(widget.$('h3')).trigger("click")
+      widget.$('h3').trigger('click')
       expect(counter).to.equal(1)
 
       counter = 0
-      $(widget.$('p')).trigger('click')
+      widget.$('p').trigger('click')
       expect(counter).to.equal(1)
     })
 
@@ -408,7 +413,7 @@ define(function(require) {
       })
 
       var widget = globalVar.widget = new TestWidget().render()
-      $(widget.element).trigger('click')
+      widget.element.trigger('click')
       expect(counter).to.equal(1)
     })
 
@@ -417,7 +422,7 @@ define(function(require) {
       var divs = $('<div id="' + id + '"></div><div></div>')
 
       new Widget({
-        element: divs.get(0),
+        element: divs.eq(0),
         parentNode: document.body
       }).render()
 
@@ -447,7 +452,7 @@ define(function(require) {
         template: '<div><header>x</header><button>x</button><p>x</p><div id="ttt"></div></div>'
       }).render()
 
-      $(a.$('p')).trigger('click')
+      a.$('p').trigger('click')
       expect(counter).to.equal(1)
 
       counter = 0
@@ -482,15 +487,15 @@ define(function(require) {
       }).render()
 
       counter = 0
-      $(object.$('p')).trigger('click')
+      object.$('p').trigger('click')
       expect(counter).to.equal(1)
 
       counter = 0
-      $(object.$('div')).trigger('click')
+      object.$('div').trigger('click')
       expect(counter).to.equal(1)
 
       counter = 0
-      $(object.$('span')).trigger('click')
+      object.$('span').trigger('click')
       expect(counter).to.equal(1)
     })
 
@@ -558,24 +563,6 @@ define(function(require) {
       expect(r.join()).to.equal('3')
       expect(p.join()).to.equal('')
     })
-
-    it('render id, className and style', function() {
-      var A = Widget.extend({
-      });
-
-      var a = new A({
-        id: "foo",
-        className: "bar",
-        style: {
-          display: "block"
-        }
-      });
-
-      a.render();
-      expect(a.element.id).to.equal("foo");
-      expect($(a.element).hasClass("bar")).to.equal(true);
-      expect($(a.element).css("display")).to.equal("block");
-    });
 
     it('default values in attrs', function() {
       var boolSpy = sinon.spy()
@@ -796,7 +783,7 @@ define(function(require) {
         template: '<div id="destroy"><a></a></div>'
       }).render()
 
-      expect(A.element).to.eql($('#destroy')[0])
+      expect(A.element[0]).to.eql($('#destroy')[0])
 
       A.destroy()
       expect($('#destroy')[0]).to.be(undefined)
@@ -823,7 +810,7 @@ define(function(require) {
         template: '<div id="destroy"><a></a></div>'
       }).render()
 
-      expect($(A.element).css('paddingTop')).to.be('1px')
+      expect(A.element.css('paddingTop')).to.be('1px')
     })
 
     it('_isTemplate', function() {
@@ -926,21 +913,6 @@ define(function(require) {
       }
       return result
     }
-  }
-
-  function trigger(element, event) {
-    // Support Elements.
-    if ("length" in element) {
-      Array.prototype.forEach.call(element, function(el) {
-        trigger(el, event);
-      });
-      return;
-    }
-
-    var specialEvents = ["click", "mousedown", "mouseup", "mousemove"];
-    var e = document.createEvent(specialEvents.indexOf(event) > -1 ? "MouseEvents" : "Events");
-    e.initEvent(event, true, true);
-    element.dispatchEvent(e);
   }
 
 });

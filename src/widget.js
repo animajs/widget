@@ -7,6 +7,7 @@ define(function(require, exports, module) {
   // 和 methods。Widget 基类约定了这四要素创建时的基本流程和最佳实践。
 
   var Base = require('base');
+  var $ = require('zepto');
   var DAParser = require('./daparser');
 
   var DELEGATE_EVENT_NS = '.delegate-events-';
@@ -56,7 +57,7 @@ define(function(require, exports, module) {
 
       // 初始化 attrs
       var dataAttrsConfig = this._parseDataAttrsConfig(config);
-      Widget.superclass.initialize.call(this, config ? mix(dataAttrsConfig || {}, config) : dataAttrsConfig);
+      Widget.superclass.initialize.call(this, config ? $.extend(dataAttrsConfig || {}, config) : dataAttrsConfig);
 
       // 初始化 props
       this.parseElement();
@@ -79,11 +80,11 @@ define(function(require, exports, module) {
     _parseDataAttrsConfig: function(config) {
       var element, dataAttrsConfig
       if (config) {
-        element = config.initElement ? find(config.initElement)[0] : find(config.element)[0];
+        element = config.initElement ? $(config.initElement) : $(config.element);
       }
 
       // 解析 data-api 时，只考虑用户传入的 element，不考虑来自继承或从模板构建的
-      if (element) {
+      if (element && element[0]) {
         dataAttrsConfig = DAParser.parseElement(element)
       }
 
@@ -95,15 +96,15 @@ define(function(require, exports, module) {
       var element = this.element;
 
       if (element) {
-        this.element = find(element)[0];
+        this.element = $(element);
       }
       // 未传入 element 时，从 template 构建
-      else if (!element && this.get('template')) {
-        this.element = parseElementFromHTML(this.get('template'));
+      else if (this.get('template')) {
+        this.element = $(this.get('template'));
       }
 
       // 如果对应的 DOM 元素不存在，则报错
-      if (!this.element) {
+      if (!this.element || !this.element[0]) {
         throw new Error('element is invalid')
       }
     },
@@ -141,7 +142,7 @@ define(function(require, exports, module) {
       else {
         element || (element = this.element);
         this._delegateElements || (this._delegateElements = []);
-        this._delegateElements.push(element);
+        this._delegateElements.push($(element));
       }
 
       // 'click p' => {'click p': handler}
@@ -170,7 +171,7 @@ define(function(require, exports, module) {
           }
 
           // delegate
-          on(element, eventType, selector, callback);
+          $(element).on(eventType, selector, callback);
 
         })(events[key], this);
       }
@@ -190,13 +191,14 @@ define(function(require, exports, module) {
       // 卸载所有
       // .undelegateEvents()
       if (argus.length === 0) {
-        this.element && off(this.element);
+        var type = DELEGATE_EVENT_NS + this.cid;
+        this.element && this.element.off(type);
 
         // 卸载所有外部传入的 element
         if (this._delegateElements) {
           for (var de in this._delegateElements) {
             if (!this._delegateElements.hasOwnProperty(de)) continue;
-            off(this._delegateElements[de]);
+            this._delegateElements[de].off(type);
           }
         }
 
@@ -206,13 +208,13 @@ define(function(require, exports, module) {
         // 卸载 this.element
         // .undelegateEvents(events)
         if (!element) {
-          this.element && off(this.element, args.type, args.selector);
+          this.element && this.element.off(args.type, args.selector);
         }
 
         // 卸载外部 element
         // .undelegateEvents(element, events)
         else {
-          off(element, args.type, args.selector);
+          $(element).off(args.type, args.selector);
         }
       }
       return this;
@@ -234,13 +236,9 @@ define(function(require, exports, module) {
       }
 
       // 插入到文档流中
-      var parentNode = find(this.get('parentNode'))[0];
-      // 如果 parentNode 是 jQuery|zepto 对象
-      if (!parentNode.appendChild && parentNode[0] && parentNode[0].appendChild) {
-        parentNode = parentNode[0];
-      }
-      if (parentNode && !isInDocument(this.element)) {
-        parentNode.appendChild(this.element);
+      var parentNode = this.get('parentNode');
+      if (parentNode && !isInDocument(this.element[0])) {
+        this.element.appendTo(parentNode);
       }
 
       return this;
@@ -274,28 +272,28 @@ define(function(require, exports, module) {
     },
 
     _onRenderId: function(val) {
-      this.element.id = val;
+      this.element.attr("id", val);
     },
 
     _onRenderClassName: function(val) {
-      addClass(this.element, val);
+      this.element.addClass(this.element, val);
     },
 
     _onRenderStyle: function(val) {
-      css(this.element, val);
+      this.element.css(val);
     },
 
     // 让 element 与 Widget 实例建立关联
     _stamp: function() {
       var cid = this.cid;
 
-      (this.initElement || this.element).setAttribute(DATA_WIDGET_CID, cid);
+      (this.initElement || this.element).attr(DATA_WIDGET_CID, cid);
       cachedInstances[cid] = this;
     },
 
     // 在 this.element 内寻找匹配节点
     $: function(selector) {
-      return find(selector, this.element);
+      return this.element.find(selector);
     },
 
     destroy: function() {
@@ -304,11 +302,8 @@ define(function(require, exports, module) {
 
       // For memory leak
       if (this.element && this._isTemplate) {
-        off(this.element);
-        // 如果是 widget 生成的 element 则去除
-        if (this.element.parentNode) {
-          this.element.parentNode.removeChild(this.element);
-        }
+        this.element.off();
+        this.element.remove();
       }
       this.element = null;
 
@@ -317,7 +312,7 @@ define(function(require, exports, module) {
   });
 
   // For memory leak
-  window.addEventListener("unload", function() {
+  $(window).unload(function() {
     for(var cid in cachedInstances) {
       cachedInstances[cid].destroy();
     }
@@ -367,7 +362,7 @@ define(function(require, exports, module) {
 
   function parseEventKey(eventKey, widget) {
     var match = eventKey.match(EVENT_KEY_SPLITTER)
-    var eventType = match[1]  // + DELEGATE_EVENT_NS + widget.cid
+    var eventType = match[1] + DELEGATE_EVENT_NS + widget.cid
 
     // 当没有 selector 时，需要设置为 undefined，以使得 zepto 能正确转换为 bind
     var selector = match[2] || undefined
@@ -422,123 +417,6 @@ define(function(require, exports, module) {
       }
     }
     return argus;
-  }
-
-  function mix(r, s) {
-    for (var p in s) {
-      r[p] = s[p];
-    }
-    return r;
-  }
-
-  var fragmentRE = /^\s*<(\w+|!)[^>]*>/;
-  var singleTagRE = /^<(\w+)\s*\/?>(?:<\/\1>|)$/;
-  var tagExpanderRE = /<(?!area|br|col|embed|hr|img|input|link|meta|param)(([\w:]+)[^>]*)\/>/ig;
-  var table = document.createElement('table');
-  var tableRow = document.createElement('tr');
-  var containers = {
-      'tr': document.createElement('tbody'),
-      'tbody': table, 'thead': table, 'tfoot': table,
-      'td': tableRow, 'th': tableRow,
-      '*': document.createElement('div')
-    };
-
-  function parseElementFromHTML(html) {
-    var dom, nodes, container;
-
-    if (html.replace) html = html.replace(tagExpanderRE, "<$1></$2>");
-    if (name === undefined) name = fragmentRE.test(html) && RegExp.$1;
-    if (!(name in containers)) name = '*';
-
-    container = containers[name];
-    container.innerHTML = '' + html;
-    dom = [].slice.call(container.childNodes)[0];
-    container.innerHTML = '';
-
-    return dom;
-  }
-
-  function find(selector, context) {
-    if (typeof selector === "object") return [selector];
-    else if (typeof selector === "string") {
-      selector = selector.trim();
-      context = context || document;
-      return context.querySelectorAll(selector);
-    } else {
-      return [];
-    }
-  }
-
-  var _aid = 1;
-  var _handlers = {};
-
-  function _isDocument(obj) {
-    return obj != null && obj.nodeType == obj.DOCUMENT_NODE;
-  }
-
-  function _closest(node, selector, context) {
-    var matchesSelector = node.webkitMatchesSelector || node.mozMatchesSelector ||
-                          node.oMatchesSelector || node.matchesSelector
-    while (node && !matchesSelector.call(node, selector)) {
-      node = node != context && !_isDocument(node) && node.parentNode
-    }
-    return node;
-  }
-
-  function on(element, event, selector, fn) {
-    var id = element._aid = element._aid || _aid++;
-    var set = _handlers[id] || (_handlers[id] = []);
-    var handler = {e:event,sel:selector};
-    handler.proxy = function(e) {
-      if (selector) {
-        var match = _closest(e.target, selector, element);
-        if (match && match != element) {
-          fn.apply(match, [e]);
-        }
-      } else {
-        fn.apply(match, [e]);
-      }
-    };
-    set.push(handler);
-    element.addEventListener(event, handler.proxy);
-  }
-
-  function off(element, event, selector) {
-    if (!element._aid) return;
-    var set = _handlers[element._aid];
-    set.forEach(function(handler) {
-      if (!event || event === handler.e) {
-        if (!selector || selector === handler.sel) {
-          element.removeEventListener(handler.e, handler.proxy);
-        }
-      }
-    });
-  }
-
-  function dasherize(str) {
-    return str.replace(/::/g, '/')
-           .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
-           .replace(/([a-z\d])([A-Z])/g, '$1_$2')
-           .replace(/_/g, '-')
-           .toLowerCase();
-  }
-
-  function css(element, property) {
-    var css = "";
-    for (key in property) {
-      css += dasherize(key) + ':' + property[key] + ';';
-    }
-    element.style.cssText += ';' + css;
-  }
-
-  function addClass(element, className) {
-    var classList = element.className.trim().split(/\s+/g);
-    className.split(/\s+/g).forEach(function(name) {
-      if (classList.indexOf(name) === -1) {
-        classList.push(name);
-      }
-    });
-    element.className = classList.join(" ").trim();
   }
 
 });
