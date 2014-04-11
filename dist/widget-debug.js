@@ -206,10 +206,10 @@ define("anima/widget/2.0.0/widget-debug", [ "anima/base/2.0.0/base-debug", "anim
             }
         },
         _onRenderId: function(val) {
-            this.element.attr("id", val);
+            this.element.id = val;
         },
         _onRenderClassName: function(val) {
-            this.element.addClass(val);
+            addClass(this.element, val);
         },
         _onRenderStyle: function(val) {
             css(this.element, val);
@@ -420,6 +420,15 @@ define("anima/widget/2.0.0/widget-debug", [ "anima/base/2.0.0/base-debug", "anim
             css += dasherize(key) + ":" + property[key] + ";";
         }
         element.style.cssText += ";" + css;
+    }
+    function addClass(element, className) {
+        var classList = element.className.trim().split(/\s+/g);
+        className.split(/\s+/g).forEach(function(name) {
+            if (classList.indexOf(name) === -1) {
+                classList.push(name);
+            }
+        });
+        element.className = classList.join(" ").trim();
     }
 });
 
