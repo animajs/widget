@@ -108,37 +108,6 @@ define(function(require) {
       expect(dataset).to.eql({})
     })
 
-    it("run plugins properly", function() {
-      var countS = 0;
-      var countR = 0;
-      var countD = 0;
-
-      var PluginA = {
-        setup  : function() { countS++; },
-        render : function() { countR++; },
-        destroy: function() { countD++; }
-      };
-
-      var A = Widget.extend({});
-      var a = new A({
-        plugins: [PluginA]
-      });
-
-      expect(a.plugins.length).to.be(1);
-
-      expect(countS).to.be(1);
-      expect(countR).to.be(0);
-      expect(countD).to.be(0);
-      a.render();
-      expect(countS).to.be(1);
-      expect(countR).to.be(1);
-      expect(countD).to.be(0);
-      a.destroy();
-      expect(countS).to.be(1);
-      expect(countR).to.be(1);
-      expect(countD).to.be(1);
-    });
-
     describe('delegateEvents / undelegateEvents', function() {
       it('delegateEvents()', function() {
         var spy1 = sinon.spy();
