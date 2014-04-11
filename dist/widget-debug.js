@@ -1,4 +1,4 @@
-define("anima/widget/1.0.0/widget-debug", [ "anima/base/1.0.0/base-debug", "anima/class/2.0.0/class-debug", "anima/events/1.1.0/events-debug", "anima/base/1.0.0/aspect-debug", "anima/base/1.0.0/attribute-debug", "anima/zepto/1.0.0/zepto-debug", "./daparser-debug" ], function(require, exports, module) {
+define("anima/widget/1.0.0/widget-debug", [ "anima/base/1.0.0/base-debug", "anima/class/1.0.0/class-debug", "anima/events/1.0.0/events-debug", "anima/zepto/1.0.0/zepto-debug", "./daparser-debug" ], function(require, exports, module) {
     // Widget
     // ---------
     // Widget 是与 DOM 元素相关联的非工具类组件，主要负责 View 层的管理。
