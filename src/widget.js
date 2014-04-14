@@ -238,7 +238,15 @@ define(function(require, exports, module) {
       // 插入到文档流中
       var parentNode = this.get('parentNode');
       if (parentNode && !isInDocument(this.element[0])) {
-        this.element.appendTo(parentNode);
+        // 隔离样式，添加统一的命名空间
+        // https://github.com/aliceui/aliceui.org/issues/9
+        var outerBoxClass = this.constructor.outerBoxClass;
+        if (outerBoxClass) {
+          var outerBox = this._outerBox = $('<div></div>').addClass(outerBoxClass);
+          outerBox.append(this.element).appendTo(parentNode);
+        } else {
+          this.element.appendTo(parentNode);
+        }
       }
 
       return this;
@@ -303,7 +311,12 @@ define(function(require, exports, module) {
       // For memory leak
       if (this.element && this._isTemplate) {
         this.element.off();
-        this.element.remove();
+        // 如果是 widget 生成的 element 则去除
+        if (this._outerBox) {
+          this._outerBox.remove();
+        } else {
+          this.element.remove();
+        }
       }
       this.element = null;
 
