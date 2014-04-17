@@ -8,7 +8,6 @@ define(function(require, exports, module) {
 
   var Base = require('base');
   var $ = require('zepto');
-  var DAParser = require('./daparser');
 
   var DELEGATE_EVENT_NS = '.delegate-events-';
   var ON_RENDER = '_onRender';
@@ -56,8 +55,7 @@ define(function(require, exports, module) {
       this.cid = uniqueCid();
 
       // 初始化 attrs
-      var dataAttrsConfig = this._parseDataAttrsConfig(config);
-      Widget.superclass.initialize.call(this, config ? $.extend(dataAttrsConfig || {}, config) : dataAttrsConfig);
+      Widget.superclass.initialize.call(this, config);
 
       // 初始化 props
       this.parseElement();
@@ -74,21 +72,6 @@ define(function(require, exports, module) {
 
       // 是否由 template 初始化
       this._isTemplate = !(config && config.element);
-    },
-
-    // 解析通过 data-attr 设置的 api
-    _parseDataAttrsConfig: function(config) {
-      var element, dataAttrsConfig
-      if (config) {
-        element = config.initElement ? $(config.initElement) : $(config.element);
-      }
-
-      // 解析 data-api 时，只考虑用户传入的 element，不考虑来自继承或从模板构建的
-      if (element && element[0]) {
-        dataAttrsConfig = DAParser.parseElement(element)
-      }
-
-      return dataAttrsConfig
     },
 
     // 构建 this.element

@@ -1,7 +1,6 @@
 define(function(require) {
 
   var Widget = require('widget')
-  var DAParser = require('daparser')
   var expect = require('expect')
   var $ = require('zepto')
   var sinon = require('sinon')
@@ -95,20 +94,6 @@ define(function(require) {
       expect(widget.element[0].tagName).to.equal('SPAN')
 
       div.remove()
-    })
-
-    it('parse data attrs', function() {
-
-      // 默认解析 data-api
-      var widget = globalVar.widget = new Widget()
-
-      // 可通过选项关闭 data-api
-      document.body.setAttribute('data-api', 'off')
-
-      var dataset = DAParser.parseElement(widget.element)
-      delete dataset['widgetCid']
-
-      expect(dataset).to.eql({})
     })
 
     describe('delegateEvents / undelegateEvents', function() {
@@ -672,21 +657,6 @@ define(function(require) {
 
       a.render()
       expect(counter).to.equal(1)
-    })
-
-    it('data attr api', function() {
-      var div = $('<div id="data-attr-api-test" data-a=1 data-b="b" data-arr="[1,2,3]" data-c="true" data-d=\'{"num": 1, "str": "s", "bool": true}\'></div>')
-          .appendTo(document.body)
-
-      var t = globalVar.t = new Widget({ element: '#data-attr-api-test', b: 'b2' })
-
-      expect(t.get('a')).to.equal(1)
-      expect(t.get('b')).to.equal('b2')
-      expect(t.get('c')).to.equal(true)
-      expect(t.get('d').num).to.equal(1)
-      expect(t.get('d').str).to.equal('s')
-      expect(t.get('d').bool).to.equal(true)
-      expect(t.get('arr')).to.eql([1, 2, 3])
     })
 
     it('onXx setter in attrs', function() {
