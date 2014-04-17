@@ -324,13 +324,6 @@ define(function(require, exports, module) {
     }
   });
 
-  // For memory leak
-  $(window).unload(function() {
-    for(var cid in cachedInstances) {
-      cachedInstances[cid].destroy();
-    }
-  });
-
 
   module.exports = Widget;
 
