@@ -129,7 +129,7 @@ define(function(require, exports, module) {
       }
 
       // 'click p' => {'click p': handler}
-      if (isString(events) && isFunction(handler)) {
+      if (isString(events) && $.isFunction(handler)) {
         var o = {};
         o[events] = handler;
         events = o;
@@ -146,7 +146,7 @@ define(function(require, exports, module) {
         (function(handler, widget) {
 
           var callback = function(ev) {
-            if (isFunction(handler)) {
+            if ($.isFunction(handler)) {
               handler.call(widget, ev);
             } else {
               widget[handler](ev);
@@ -325,10 +325,6 @@ define(function(require, exports, module) {
     return toString.call(val) === '[object String]';
   }
 
-  function isFunction(val) {
-    return toString.call(val) === '[object Function]';
-  }
-
   function isInDocument(element) {
     return !!(document.documentElement.compareDocumentPosition(element) & 16);
   }
@@ -343,7 +339,7 @@ define(function(require, exports, module) {
   var INVALID_SELECTOR = 'INVALID_SELECTOR';
 
   function getEvents(widget) {
-    if (isFunction(widget.events)) {
+    if ($.isFunction(widget.events)) {
       widget.events = widget.events();
     }
     return widget.events;
