@@ -9,6 +9,7 @@
         "玉伯 <lifesinger@gmail.com>",
         "贯高 <sakura9515@gmail.com>",
         "云谦 <sorrycc@gmail.com>"
+        "完颜 <SMbey0nd@163.com>"
     ],
     "repository": {
         "type": "git",
@@ -19,7 +20,7 @@
     },
     "spm": {
         "dependencies": {
-            "anima-zepto": "1.0.0",
+            "anima-yocto": "1.0.0",
             "anima-base": "1.0.0"
         },
         "main": "index.js"
