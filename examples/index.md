@@ -54,7 +54,7 @@
 ### JavaScript
 
 ````js
-seajs.use(['widget', '$'], function(Widget, $) {
+seajs.use(['../index', 'anima-yocto'], function(Widget, $) {
 
     var WidgetA = Widget.extend({
 

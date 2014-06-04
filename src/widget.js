@@ -5,7 +5,7 @@
 // 和 methods。Widget 基类约定了这四要素创建时的基本流程和最佳实践。
 
 var Base = require('anima-base');
-var $ = require('anima-zepto');
+var $ = require('anima-yocto');
 
 var DELEGATE_EVENT_NS = '.delegate-events-';
 var ON_RENDER = '_onRender';

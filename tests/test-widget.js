@@ -1,6 +1,6 @@
 define(function(require, exports, module) {
-  var $ = require('$');
-  var Widget = require('widget');
+  var $ = require('anima-yocto');
+  var Widget = require('../index');
 
   var TestWidget = Widget.extend({
 

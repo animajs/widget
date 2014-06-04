@@ -1,8 +1,7 @@
-define(function(require) {
 
-  var Widget = require('widget')
+  var Widget = require('../index')
   var expect = require('expect')
-  var $ = require('zepto')
+  var $ = require('anima-yocto')
   var sinon = require('sinon')
 
 
@@ -915,4 +914,3 @@ define(function(require) {
     }
   }
 
-});
