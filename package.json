@@ -20,7 +20,7 @@
     },
     "spm": {
         "dependencies": {
-            "anima-yocto": "1.0.0",
+            "anima-yocto": "1.0.1",
             "anima-base": "1.0.0"
         },
         "main": "index.js",
